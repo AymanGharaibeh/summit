@@ -14,7 +14,7 @@ const { outputText } = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
   },
 });
-const { createSummitPostsService } = await import(
+const { createSummitPostsService, validatePost } = await import(
   `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
 );
 const input = {
@@ -27,6 +27,13 @@ const photo = {
   height: 800,
   mimeType: 'image/jpeg',
 };
+
+test('validatePost rejects a valid message with an invalid community', () => {
+  assert.throws(
+    () => validatePost({ body: 'A valid message', community: 'not-real' }),
+    { name: 'Error', message: 'Select a valid community.' },
+  );
+});
 
 test('create a text post with a community, real username, and no title', () => {
   const service = createSummitPostsService('Sarah');
