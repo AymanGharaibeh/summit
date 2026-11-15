@@ -21,6 +21,7 @@ export async function createPost(
   authorId: number,
   communityId: number,
   image?: { photoUrl?: string; photoWidth?: number; photoHeight?: number },
+  isAnonymous: boolean = false,
 ) {
   return prismaClient.post.create({
     data: {
@@ -29,6 +30,7 @@ export async function createPost(
       authorId,
       communityId,
       ...image,
+      isAnonymous,
     },
     include: postRelations,
   });
@@ -77,6 +79,7 @@ export async function updatePost(
     title?: string;
     body?: string;
     communityId?: number;
+    isAnonymous?: boolean;
     photoUrl?: string | null;
     photoWidth?: number | null;
     photoHeight?: number | null;

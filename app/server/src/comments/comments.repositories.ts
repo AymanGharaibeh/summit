@@ -25,6 +25,7 @@ export async function createComment(
   authorId: number,
   body: string,
   parentId: number | null = null,
+  isAnonymous: boolean = false,
 ) {
   return prismaClient.comment.create({
     data: {
@@ -32,6 +33,7 @@ export async function createComment(
       authorId,
       body,
       parentId,
+      isAnonymous,
     },
     include: commentAuthor,
   });
@@ -147,10 +149,14 @@ export async function setCommentVote(
   );
 }
 
-export async function updateCommentById(commentId: number, body: string) {
+export async function updateCommentById(
+  commentId: number,
+  body: string,
+  isAnonymous?: boolean,
+) {
   return prismaClient.comment.update({
     where: { id: commentId },
-    data: { body },
+    data: { body, ...(isAnonymous === undefined ? {} : { isAnonymous }) },
     include: commentAuthor,
   });
 }

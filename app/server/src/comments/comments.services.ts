@@ -78,9 +78,15 @@ export async function createCommentService(
   data: CreateCommentRequest,
 ): Promise<CreateCommentResponse> {
   await requireExistingPost(postId);
-  const comment = await createComment(postId, userId, data.body);
+  const comment = await createComment(
+    postId,
+    userId,
+    data.body,
+    null,
+    data.isAnonymous,
+  );
   return {
-    comment: toCommentContract(comment),
+    comment: toCommentContract(comment, userId),
   };
 }
 
@@ -95,9 +101,10 @@ export async function createReplyService(
     userId,
     data.body,
     parent.id,
+    data.isAnonymous,
   );
   return {
-    comment: toCommentContract(reply),
+    comment: toCommentContract(reply, userId),
   };
 }
 
@@ -118,11 +125,12 @@ export async function getCommentVoteService(
 
 export async function getPostCommentsService(
   postId: number,
+  viewerId?: number,
 ): Promise<GetAllForPostResponse> {
   await requireExistingPost(postId);
   const comments = await getCommentsByPostId(postId);
   return {
-    comments: comments.map(toCommentContract),
+    comments: comments.map((comment) => toCommentContract(comment, viewerId)),
   };
 }
 
@@ -141,9 +149,13 @@ export async function updateCommentService(
   data: UpdateCommentRequest,
 ): Promise<UpdateCommentResponse> {
   await requireEditableComment(commentId, userId);
-  const comment = await updateCommentById(commentId, data.body);
+  const comment = await updateCommentById(
+    commentId,
+    data.body,
+    data.isAnonymous,
+  );
   return {
-    comment: toCommentContract(comment),
+    comment: toCommentContract(comment, userId),
   };
 }
 
