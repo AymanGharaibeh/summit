@@ -1,0 +1,60 @@
+name: summit
+
+services:
+  db:
+    image: postgres:17-alpine
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - summit_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  server:
+    depends_on:
+      db:
+        condition: service_healthy
+
+    build:
+      context: ./app
+      dockerfile: server/Dockerfile
+
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      SERVER_BIND_ADDRESS: 0.0.0.0
+      SERVER_PORT: ${SERVER_PORT}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL}
+      ENABLE_DEMO_MODE: ${ENABLE_DEMO_MODE}
+      DEMO_MODE_CODE: ${DEMO_MODE_CODE}
+
+    volumes:
+      - summit_post_images:/app/server/uploads
+
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+
+volumes:
+  summit_post_images:
+  summit_postgres_data:

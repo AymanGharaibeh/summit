@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                     Int        @id @default(autoincrement())
+  username               String     @unique
+  email                  String     @unique
+  passwordHash           String     @map("password_hash")
+  createdAt              DateTime   @default(now()) @map("created_at")
+  codeHash               String     @map("code_hash")
+  emailVerified          Boolean    @default(false)
+  resetCodeHash      String?   @map("reset_code_hash")
+  resetCodeExpiresAt DateTime? @map("reset_code_expires_at")
+
+  posts        Post[]
+  comments     Comment[]
+  postVotes PostVote[]
+  commentVotes CommentVote[]
+  createdCommunities Community[]
+  communityMemberships CommunityMembership[]
+
+  @@map("users")
+}
+
+model Post {
+  id          Int      @id @default(autoincrement())
+  authorId    Int      @map("author_id")
+  communityId Int      @map("community_id")
+  title       String
+  body        String
+  vote        Int      @default(0)
+  photoUrl    String?  @map("photo_url")
+  photoWidth  Int?     @map("photo_width")
+  photoHeight Int?     @map("photo_height")
+  createdAt   DateTime @default(now()) @map("created_at")
+  isAnonymous Boolean @default(false) @map("is_anonymous")
+
+  author    User      @relation(fields: [authorId], references: [id])
+  community Community @relation(fields: [communityId], references: [id])
+  comments  Comment[]
+  summaries Summary[]
+  postVotes PostVote[]
+
+  @@index([communityId, createdAt])
+  @@map("posts")
+}
+
+model Comment {
+  id        Int       @id @default(autoincrement())
+  postId    Int       @map("post_id")
+  authorId  Int       @map("author_id")
+  parentId  Int?      @map("parent_id")
+  body      String
+  vote      Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+  isAnonymous Boolean @default(false) @map("is_anonymous")
+
+  post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User      @relation(fields: [authorId], references: [id])
+
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[] @relation("CommentReplies")
+  commentVotes CommentVote[]
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model Summary {
+  id           Int      @id @default(autoincrement())
+  postId       Int      @map("post_id")
+  commentCount Int      @map("comment_count")
+  summary      String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  post         Post     @relation(fields: [postId], references: [id])
+
+  @@map("summaries")
+}
+
+model PostVote {
+  postId Int @map("post_id")
+  userId Int @map("user_id")
+  value  Int @default(0)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+  @@map("post_votes")
+}
+
+model CommentVote {
+  commentId Int @map("comment_id")
+  userId    Int @map("user_id")
+  value     Int
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
+  @@map("comment_votes")
+}
+
+model Community {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String   @default("")
+  topic       String   @default("Uncategorized")
+  subtopic    String   @default("General")
+  creatorId   Int      @map("creator_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  creator User   @relation(fields: [creatorId], references: [id])
+  posts   Post[]
+  memberships CommunityMembership[]
+
+  @@map("communities")
+}
+
+model CommunityMembership {
+  userId      Int      @map("user_id")
+  communityId Int      @map("community_id")
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+
+  @@id([userId, communityId])
+  @@index([communityId])
+  @@map("community_memberships")
+}
